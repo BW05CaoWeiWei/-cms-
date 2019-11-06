@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.caoweiwei.cms.dao.ArticleMapper">
+	
+	<!-- 显示频道或者分类下边的文章列表 -->
+	<select id="list" resultType="Article">      
+		 select a.id,a.commentCnt,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,a.
+		      hits,a.hot,a.status,a.deleted,a.created,a.updated, u.username, GROUP_CONCAT(t.tagname) as tags 
+		      from cms_article as a left join cms_user u on u.id=a.user_id 
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid
+		 <where>
+		 	a.status=1 and a.deleted=0
+		 	<if test="channelId!=0">
+		 		and a.channel_id=#{channelId}
+		 	</if>
+		 	<if test="catId!=0">
+		 		and a.category_id=#{catId}
+		 	</if>
+		 </where>
+			 group by a.id
+	</select>
+	
+	<select id="findById" resultType="Article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,a.
+		      hits,a.hot,a.status,a.deleted,a.created,a.updated, u.username, GROUP_CONCAT(t.tagname) as tags 
+		      from cms_article as a left join cms_user u on u.id=a.user_id 
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.id=#{value}  and a.deleted=0 <!-- and a.status=1 and a.deleted=0 -->
+			  group by a.id 
+	</select>
+	
+	<!-- 用户查看自己的文章，可以看到审核各种状态，但是不能查看被删除的文章 -->
+	<select id="listByUser" resultType="Article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,a.
+		      hits,a.hot,a.status,a.deleted,a.created,a.updated, cat.`name` as catName , chn.`name` as chnName, GROUP_CONCAT(t.tagname) as tags 
+		      from cms_article as a 
+						  left join cms_channel as chn on chn.id=a.channel_id 
+							left join cms_category as cat on cat.id=a.category_id
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.user_id=#{userId} and a.deleted=0 
+			  group by a.id 
+			  order by a.created desc
+	</select>
+	
+	<!-- 用管理员查看文章，可以看到审核各种状态，但是不能查看被删除的文章 -->
+	<select id="checkList" resultType="Article">
+			select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,
+			  a.hits,a.hot,a.status,a.deleted,a.created,a.updated, cat.`name` as catName ,
+			   chn.`name` as chnName, GROUP_CONCAT(t.tagname) as tags ,u.username
+		      from cms_article as a 
+		        left join cms_user u on u.id=a.user_id 
+				left join cms_channel as chn on chn.id=a.channel_id 
+				left join cms_category as cat on cat.id=a.category_id
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.status=#{value} <!-- and a.deleted=0  -->
+			  group by a.id 
+			  order by a.created desc
+			  
+	</select>
+	
+	<select id="hotList" resultType="article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,
+			  a.hits,a.hot,a.status,a.deleted,a.created,a.updated, cat.`name` as catName ,
+			   chn.`name` as chnName, GROUP_CONCAT(t.tagname) as tags ,u.username
+		      from cms_article as a 
+		        left join cms_user u on u.id=a.user_id 
+				left join cms_channel as chn on chn.id=a.channel_id 
+				left join cms_category as cat on cat.id=a.category_id
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.hot>0 <!-- and a.status=1 and a.deleted=0  -->
+              <if test='title!=""'>
+              	  and a.title like concat('%',#{title},'%')
+              </if>
+			  group by a.id 
+			  order by  a.hot desc,  a.created desc
+	</select>
+	
+	
+	<select id="lastArticles" resultType="article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,
+			  a.hits,a.hot,a.status,a.deleted,a.created,a.updated, cat.`name` as catName ,
+			   chn.`name` as chnName, GROUP_CONCAT(t.tagname) as tags ,u.username
+		      from cms_article as a 
+		        left join cms_user u on u.id=a.user_id 
+				left join cms_channel as chn on chn.id=a.channel_id 
+				left join cms_category as cat on cat.id=a.category_id
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.status=1  <!-- and a.deleted=0  -->
+              group by a.id
+              order by   a.created desc
+              limit 5
+	</select>
+	<select id="queryArticleAll" resultType="article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,
+			  a.hits,a.hot,a.status,a.deleted,a.created,a.updated, cat.`name` as catName ,
+			   chn.`name` as chnName, GROUP_CONCAT(t.tagname) as tags ,u.username
+		      from cms_article as a 
+		        left join cms_user u on u.id=a.user_id 
+				left join cms_channel as chn on chn.id=a.channel_id 
+				left join cms_category as cat on cat.id=a.category_id
+              left join cms_article_tag_middle as atm on atm.aid=a.id
+              LEFT join cms_tag as t on t.id=atm.tid  
+              where a.status=1  <!-- and a.deleted=0  -->
+              group by a.id
+              
+	</select>
+	
+	<select id="getAdj" resultType="article">
+		select a.id,a.commentCnt,a.content,a.title,a.picture,a.channel_id AS channelId,a.category_id categoryId,a.user_id AS userId,
+			  a.hits,a.hot,a.status,a.deleted,a.created,a.updated FROM cms_article a 
+			  WHERE channel_id=#{cid}
+			  <if test="flag==1"><!-- 上一页 -->
+			  	AND id &lt; #{aid} order by id  desc
+			  </if>
+			  <if test="flag==2"><!-- 下一页 -->
+			  	AND id &gt; #{aid} order by id  asc
+			  </if>
+			  limit 1
+	</select>
+	
+	<!-- 页面添加数据时使用 -->
+	<insert id="add" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+		insert into cms_article(status,created,hits,hot,deleted,content,title,picture,channel_id,category_id,user_id,commentCnt)
+		
+		 values(0,now(),0,0,0,#{content},#{title},#{picture},#{channelId},#{categoryId},#{userId},0)
+	</insert>
+	
+	<!-- 导入数据时使用 -->
+	<insert id="insert" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+		insert into cms_article(status,created,hits,hot,deleted,content,title,picture,channel_id,category_id,user_id,commentCnt,remark)
+		
+		 values(#{status},#{created},#{hits},#{hot},0,#{content},#{title},#{picture},#{channelId},#{categoryId},#{userId},0,#{remark})
+	</insert>
+</mapper>
